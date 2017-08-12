@@ -5,7 +5,16 @@
 {{- else -}}
 // {{ .Name }} runs a custom query, returning results as {{ .Type.Name }}.
 {{- end }}
-func {{ .Name }} (db XODB{{ range .QueryParams }}, {{ .Name }} {{ .Type }}{{ end }}) ({{ if not .OnlyOne }}[]{{ end }}*{{ .Type.Name }}, error) {
+func {{ .Name }}(db XODB{{ range .QueryParams }}, {{ .Name }} {{ .Type }}{{ end }}) ({{ if not .OnlyOne }}[]{{ end }}*{{ .Type.Name }}, error) {
+	return {{ .Name }}Context(context.Background(), db {{range .QueryParams}}, {{ .Name }}{{ end }})
+}
+
+{{ if .Comment -}}
+// {{ .Comment }}
+{{- else -}}
+// {{ .Name }}Context runs a custom query, returning results as {{ .Type.Name }}.
+{{- end }}
+func {{ .Name }}Context(ctx context.Context, db XODB{{ range .QueryParams }}, {{ .Name }} {{ .Type }}{{ end }}) ({{ if not .OnlyOne }}[]{{ end }}*{{ .Type.Name }}, error) {
 	var err error
 
 	// sql query
@@ -16,14 +25,14 @@ func {{ .Name }} (db XODB{{ range .QueryParams }}, {{ .Name }} {{ .Type }}{{ end
 	XOLog(sqlstr{{ range .QueryParams }}{{ if not .Interpolate }}, {{ .Name }}{{ end }}{{ end }})
 {{- if .OnlyOne }}
 	var {{ $short }} {{ .Type.Name }}
-	err = db.QueryRow(sqlstr{{ range .QueryParams }}, {{ .Name }}{{ end }}).Scan({{ fieldnames .Type.Fields (print "&" $short) }})
+	err = db.QueryRowContext(ctx, sqlstr{{ range .QueryParams }}, {{ .Name }}{{ end }}).Scan({{ fieldnames .Type.Fields (print "&" $short) }})
 	if err != nil {
 		return nil, err
 	}
 
 	return &{{ $short }}, nil
 {{- else }}
-	q, err := db.Query(sqlstr{{ range .QueryParams }}, {{ .Name }}{{ end }})
+	q, err := db.QueryContext(ctx, sqlstr{{ range .QueryParams }}, {{ .Name }}{{ end }})
 	if err != nil {
 		return nil, err
 	}

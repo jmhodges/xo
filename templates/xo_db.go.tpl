@@ -4,8 +4,11 @@
 // This should work with database/sql.DB and database/sql.Tx.
 type XODB interface {
 	Exec(string, ...interface{}) (sql.Result, error)
+	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
 	Query(string, ...interface{}) (*sql.Rows, error)
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
 	QueryRow(string, ...interface{}) *sql.Row
+	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
 }
 
 // XOLog provides the log func used by generated queries.
