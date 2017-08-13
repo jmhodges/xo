@@ -1,11 +1,12 @@
 #!/bin/bash
 
-DBUSER=booktest
-DBPASS=booktest
+set -o errexit
+
+DBUSER=xouser
 DBHOST=localhost
 DBNAME=booktest
 
-DB=postgres://$DBUSER:$DBPASS@$DBHOST/$DBNAME
+DB=postgres://$DBUSER@$DBHOST/$DBNAME?sslmode=disable
 
 EXTRA=$1
 
@@ -24,11 +25,10 @@ mkdir -p $DEST
 rm -f $DEST/*.go
 rm -f $SRC/postgres
 
-psql -U postgres -c "create user booktest password 'booktest';"
-psql -U postgres -c 'drop database booktest;'
-psql -U postgres -c 'create database booktest owner booktest;'
+psql -U postgres -h $DBHOST -c "drop database if exists ${DBNAME};"
+psql -U postgres -h $DBHOST -c "create database ${DBNAME} owner ${DBUSER};"
 
-psql -U $DBUSER << 'ENDSQL'
+psql -U $DBUSER -h $DBHOST $DBNAME << 'ENDSQL'
 CREATE TABLE authors (
   author_id SERIAL PRIMARY KEY,
   name text NOT NULL DEFAULT ''
@@ -86,4 +86,4 @@ go build
 
 popd &> /dev/null
 
-psql -U $DBUSER <<< 'select * from books;'
+psql -U $DBUSER -h $DBHOST <<< 'select * from books;'
